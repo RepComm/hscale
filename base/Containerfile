@@ -1,0 +1,7 @@
+FROM ubuntu:latest
+USER root
+
+# apt-get proxy to cache-deb container
+#COPY apt.conf /etc/apt/apt.conf
+
+RUN apt-get update

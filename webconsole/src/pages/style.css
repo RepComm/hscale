@@ -1,0 +1,148 @@
+
+h1,h2,h3,h4 {
+  margin: 0;
+}
+
+select,input {
+  flex: 1;
+  min-width: 10em;
+  font-size: medium;
+  border-radius: 0.5em;
+  border-width: 2px;
+  border-style: solid;
+  background-color: #242424;
+}
+
+.border {
+  border-width: 2px;
+  border-color: #838383;
+  border-style: solid;
+  margin: 0.5em;
+  padding: 0.5em;
+  border-radius: 0.5em;
+  cursor: default;
+}
+
+.home {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  color: #b6b6b6ff;
+  overflow-y:auto;
+  margin: 0 25%;
+}
+
+@media (max-width: 1200px) {
+	.home {
+    margin: 0 15%;
+	}
+}
+@media (max-width: 800px) {
+	.home {
+    margin: 0 10%;
+	}
+}
+@media (max-width: 639px) {
+	.home {
+    margin: 0 0;
+	}
+}
+.text-center {
+  text-align: center;
+}
+.align-flex-end {
+  align-self: flex-end;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  flex: 0.3;
+}
+.row {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  margin-left: 1em;
+  max-height: 3em;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.pocketbase {
+  border-color: #5e5e81;
+}
+.marmot {
+  border-color: #da8920;
+}
+.btn {
+  background-color: transparent;
+  border-color: #416bc4;
+  border-radius: 0.5em;
+  border-width: 2px;
+  border-style: solid;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0 0.5em;
+  font-family: inherit;
+  font-size: inherit;
+  color: #d3d3d3;
+}
+.power {
+  flex: 1;
+  border-color: #487c48;
+  display: flex;
+  flex-direction: row;
+}
+.btn:hover,input:hover {
+  border-color: white;
+}
+.on {
+  margin-left: 1em;
+  flex: 1;
+  min-width: 3em;
+  border-radius: 1.5em;
+  background-color: #283b28;
+  background-image: url("../assets/power.svg");
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.add {
+  min-width: 2em;
+  max-width: 2em;
+
+  margin-right: 2em;
+  
+  background-image: url("../assets/add.svg");
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.cluster {
+  display: flex;
+  /* align-items: center; */
+  flex: 1;
+  flex-direction: column;
+}
+
+.pod {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.kv {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+}
+.k {
+  flex: 1;
+  text-align: left;
+}
+.v {
+  flex: 1;
+  text-align: right;
+}

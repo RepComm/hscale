@@ -1,0 +1,29 @@
+{
+  "deno": {
+    "enable": true,
+    "cache": null,
+    "config": null,
+    "importMap": null,
+    "codeLens": {
+      "implementations": false,
+      "references": false,
+      "referencesAllFunctions": false,
+      "test": true
+    },
+    "internalDebug": false,
+    "lint": false,
+    "suggest": {
+      "completeFunctionCalls": false,
+      "names": true,
+      "paths": true,
+      "autoImports": true,
+      "imports": {
+        "autoDiscover": true,
+        "hosts": {
+          "https://deno.land": false
+        }
+      }
+    },
+    "unstable": false
+  }
+}

@@ -1,0 +1,11 @@
+ARG DENO_VERSION=1.39.1
+
+FROM denoland/deno:bin-$DENO_VERSION AS deno
+FROM localhost/hscale/base:latest
+COPY --from=deno /deno /usr/local/bin/deno
+
+USER root
+
+COPY ./main.ts /hscale/main.ts
+RUN deno cache /hscale/main.ts
+COPY ./webconsole/dist /hscale/dist

@@ -9,10 +9,12 @@ A pocketbase + marmot management console
 ## state - NOT READY
 - web UI - partially implemented
 - containers - partially implemented
-
+- deno hscale app/container
+  - stream /webconsole/dist over port 10209
 ## TODO
-- deno hscale app is not written yet
-  - when finished it will be responsible for starting and stopping marmot and pocketbase inside of a podman container, as well as host the hscale web UI, and discovery/linking of cluster
+- deno hscale app rest API endpoint
+- starting and stopping marmot and pocketbase
+- discovery/linking of cluster
 
 ## legend
 

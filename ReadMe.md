@@ -4,6 +4,7 @@ horizontal scale
 
 A pocketbase + marmot management console
 
+![img](./hscale/webconsole/src/assets/logo.svg)
 ![img](./example.png)
 
 ## state - NOT READY

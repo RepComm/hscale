@@ -1,6 +1,19 @@
 
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
 
+function envInt (key: string, def: number): number {
+  const value = Deno.env.get(key);
+  if (value === undefined) return def;
+
+  const nv = parseInt(value);
+  if (Number.isNaN(nv)) return def;
+  return nv;
+}
+
+const HSCALE_PORT = envInt("HSCALE_PORT", 10209);
+const MARMOT_PORT = envInt("MARMOT_PORT", 4221);
+const POCKET_PORT = envInt("POCKET_PORT", 8090);
+
 function log(...args: any[]) {
   console.log("[hscale][log]", ...args);
 }
@@ -16,7 +29,7 @@ Deno.addSignalListener("SIGINT", handleExitSignals);
 const pb_cmd = new Deno.Command("/pb/pocketbase", {
   args: [
     "serve",
-    "--http=0.0.0.0:8090",
+    `--http=0.0.0.0:${POCKET_PORT}`,
     '--dir="/persist/pocketbase/pb_data"',
   ],
   stdout: "piped",
@@ -47,7 +60,7 @@ function pb_toggle() {
 async function main() {
   log("starting");
 
-  const port = 10209;
+  const port = HSCALE_PORT;
 
   const app = new Application();
   const router = new Router();

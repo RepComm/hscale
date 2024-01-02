@@ -2,34 +2,44 @@
 
 IMAGE_NAME=$(basename $(pwd))
 
-# read -p "Host ports offset (default 0 for 10209,4221,): " NODEID
-# read -p "Marmot Port: " NODEID
-
 HSCALE_CNAME=$1
-if [[ -d $HSCALE_CNAME ]]; then
+if [[ -z $HSCALE_CNAME ]]; then
   HSCALE_CNAME=$IMAGE_NAME
 fi
 
-HSCALE_PORT=$2
-if [[ -d $HSCALE_PORT ]]; then
-  HSCALE_PORT=10209
-fi
-
-MARMOT_PORT=$3
-if [[ -d $MARMOT_PORT ]]; then
-  MARMOT_PORT=4221
-fi
-
-POCKET_PORT=$4
-if [[ -d $POCKET_PORT ]]; then
+POCKET_PORT=$2
+if [[ -z $POCKET_PORT ]]; then
   POCKET_PORT=8090
 fi
 
-echo HSCALE_PORT: $HSCALE_PORT , MARMOT_PORT: $MARMOT_PORT , POCKET_PORT: $POCKET_PORT
+MARMOT_PORT=$3
+if [[ -z $MARMOT_PORT ]]; then
+  MARMOT_PORT=8091
+fi
+
+HSCALE_PORT=$4
+if [[ -z $HSCALE_PORT ]]; then
+  HSCALE_PORT=8092
+fi
+
+echo HSCALE_CNAME: $HSCALE_CNAME , HSCALE_PORT: $HSCALE_PORT , MARMOT_PORT: $MARMOT_PORT , POCKET_PORT: $POCKET_PORT
+
+PERSIST_VOL=${HSCALE_CNAME}_persist
+echo Now checking if persistence volume exists for "$PERSIST_VOL"
+if podman volume exists $PERSIST_VOL; then
+  echo Volume exists, moving on
+else
+  echo "Creating volume '$PERSIST_VOL' as it didn't exist"
+
+  if ! podman volume create $PERSIST_VOL; then
+    echo "Failed to create volume"
+    exit 2
+  fi
+fi
 
 podman run \
 --name hscale-$HSCALE_CNAME \
--v persist:/persist \
+-v $PERSIST_VOL:/persist \
 -e HSCALE_PORT=$HSCALE_PORT \
 -e POCKET_PORT=$POCKET_PORT \
 -e MARMOT_PORT=$MARMOT_PORT \

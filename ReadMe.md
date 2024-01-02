@@ -16,9 +16,9 @@ A pocketbase + marmot management console
 - containers
   - base - ubuntu latest + apt-get update
   - hscale - uses base
-    - deno webconsole http server/api on port 10209
     - pocketbase on port 8090
-    - marmot on port 4221
+    - marmot on port 8091
+    - deno webconsole http server/api on port 8092
 ## TODO
 - start/stop marmot
 - discovery/linking of cluster
@@ -72,6 +72,17 @@ Adding a node to the local hscale node will trigger the other nodes to add it ba
 
 `./start.sh`
 > [hscale][log] Web Console: http://localhost:10209/
+
+Start will auto-create the persistence volume based on the container name
+
+You can run custom args for ./start.sh:
+`./start.sh [CONTAINER_NAME | "hscale"] [POCKET_PORT | 8090] [MARMOT_PORT | 8091] [HSCALE_PORT | 8092]`
+
+The container name is prefixed with `hscale-`
+
+If only calling `./start.sh` then the container will be hscale-hscale using the hscale-hscale image
+
+These arguments are useful when you want to run multiple hscale instances on one machine
 
 ### configure
 open the URL provided in a browser

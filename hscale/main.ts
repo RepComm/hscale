@@ -10,9 +10,9 @@ function envInt (key: string, def: number): number {
   return nv;
 }
 
-const HSCALE_PORT = envInt("HSCALE_PORT", 10209);
-const MARMOT_PORT = envInt("MARMOT_PORT", 4221);
 const POCKET_PORT = envInt("POCKET_PORT", 8090);
+const MARMOT_PORT = envInt("MARMOT_PORT", 8091);
+const HSCALE_PORT = envInt("HSCALE_PORT", 8092);
 
 function log(...args: any[]) {
   console.log("[hscale][log]", ...args);
@@ -98,6 +98,17 @@ async function main() {
     } else {
       await next();
     }
+  });
+
+  router.get("", (ctx) => {
+    ctx.response.redirect("/ui");
+  });
+  router.get("/", (ctx) => {
+    ctx.response.redirect("/ui");
+  });
+  router.get("/pb", (ctx) => {
+    const {hostname, protocol} = new URL(ctx.request.url);
+    ctx.response.redirect(`${protocol}//${hostname}:${POCKET_PORT}/_`);
   });
 
   router.get("/api/:action/:target", (ctx) => {

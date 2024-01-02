@@ -1,6 +1,7 @@
 
 import { Component } from 'preact';
 import "./style.css";
+import { useRef } from 'preact/hooks';
 
 interface Props {
 
@@ -65,6 +66,8 @@ export class Home extends Component<Props, State> {
 			}
 		];
 
+    const hostRef = useRef<HTMLInputElement>();
+
 		return <div class="home border">
 			<h1 class="text-center">hscale - webconsole</h1>
 			<div class="section border">
@@ -98,7 +101,7 @@ export class Home extends Component<Props, State> {
               onClick={()=>{
                 const proto = window.location.protocol;
                 const hostname = window.location.hostname;
-                window.open(`${proto}//${hostname}:8090/_`);
+                window.open("/pb");
               }}
               disabled={!this.state.pbOnline}
               >manage</button>
@@ -183,10 +186,20 @@ export class Home extends Component<Props, State> {
 				<h2 class="text-center">Cluster</h2>
 				<div class="pod border">
 					<div class="row">
-						<div class="add" />
+						<div class="add"
+              onClick={async()=>{
+                const raw = await fetch(`/api/add/${hostRef.current.value}`);
+                const res = await raw.json();
+
+                if (res.status === "success") {
+                  
+                }
+              }}
+            />
 						<label for="host-input">Host : </label>
 						<div class="col">
 							<input
+                ref={hostRef}
 								class="align-flex-end"
 								id="host-input" value="localhost:4221" />
 						</div>

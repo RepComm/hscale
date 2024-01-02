@@ -98,6 +98,12 @@ select,input {
 .btn:hover,input:hover {
   border-color: white;
 }
+.btn:disabled {
+  border-style: dashed;
+  border-color: #4c4c4c;
+  color: #4c4c4c;
+  cursor:not-allowed;
+}
 .on {
   margin-left: 1em;
   flex: 1;
@@ -109,6 +115,18 @@ select,input {
   background-size: contain;
   background-repeat: no-repeat;
 }
+.off {
+  margin-left: 1em;
+  flex: 1;
+  min-width: 3em;
+  border-radius: 1.5em;
+  background-color: #3b2828;
+  background-image: url("../assets/power.svg");
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
 .add {
   min-width: 2em;
   max-width: 2em;

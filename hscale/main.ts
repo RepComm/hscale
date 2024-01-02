@@ -1,71 +1,161 @@
 
-// import { Application, Router } from "https://deno.land/x/oak/mod.ts";
-import { serveDir, serveFile } from "https://deno.land/std@0.207.0/http/file_server.ts";
-import { extname } from "https://deno.land/std@0.207.0/path/extname.ts";
+import { Application, Router } from "https://deno.land/x/oak/mod.ts";
 
-import { contentType } from "https://deno.land/std@0.210.0/media_types/mod.ts";
+function log(...args: any[]) {
+  console.log("[hscale][log]", ...args);
+}
 
-const controller = new AbortController();
-
-Deno.addSignalListener('SIGTERM', () => {
-  console.log('Aborting for SIGTERM')
-  // controller.abort();
+//MAKE CONTAINER STOPPING FASTER / NORMAL
+const handleExitSignals = () => {
+  log("Aborting for SIGTERM|SIGINT");
   Deno.exit(0);
+};
+Deno.addSignalListener("SIGTERM", handleExitSignals);
+Deno.addSignalListener("SIGINT", handleExitSignals);
+
+const pb_cmd = new Deno.Command("/pb/pocketbase", {
+  args: [
+    "serve",
+    "--http=0.0.0.0:8090",
+    '--dir="/persist/pocketbase/pb_data"',
+  ],
+  stdout: "piped",
+  stderr: "piped",
 });
+let pb_proc: Deno.ChildProcess | undefined;
 
-Deno.addSignalListener('SIGINT', () => {
-  console.log('Aborting for SIGINT')
-  // controller.abort();
-  Deno.exit(0);
-});
+let marmot_proc: Deno.ChildProcess | undefined;
 
-async function handleHttp(conn: Deno.Conn) {
-  const httpConn = Deno.serveHttp(conn);
-  for await (const requestEvent of httpConn) {
-    // Use the request pathname as filepath
-    const url = new URL(requestEvent.request.url);
-    let filepath = decodeURIComponent(url.pathname);
-
-    if (filepath === "/") {
-      filepath = "/index.html";
-    }
-    let file;
-    try {
-      file = await Deno.open("/hscale/dist/" + filepath, { read: true });
-    } catch {
-      // If the file cannot be opened, return a "404 Not Found" response
-      const notFoundResponse = new Response("404 Not Found", { status: 404 });
-      await requestEvent.respondWith(notFoundResponse);
-      continue;
-    }
-    
-    const ext = extname(filepath);
-    const mimeType = contentType(ext);
-    
-    //stream the file instead of loading into ram
-    const readableStream = file.readable;
-
-    // Build and send the response
-    const response = new Response(readableStream);
-    if (mimeType !== undefined) {
-      response.headers.append("Content-Type", mimeType);
-    }
-    await requestEvent.respondWith(response);
+function pb_toggle() {
+  if (pb_proc) {
+    log("Stopping pocketbase");
+    pb_proc.kill("SIGINT");
+    pb_proc = undefined;
+  } else {
+    log("Starting pocketbase");
+    pb_proc = pb_cmd.spawn();
+    const opts = {
+      preventClose: true,
+      preventAbort: true,
+      preventCancel: true,
+    };
+    pb_proc.stdout.pipeTo(Deno.stdout.writable, opts);
+    pb_proc.stderr.pipeTo(Deno.stderr.writable, opts);
   }
 }
 
-async function main () {
-  console.log("hscale deno app starting");
+async function main() {
+  log("starting");
 
   const port = 10209;
 
-  const server = Deno.listen({ port });
+  const app = new Application();
+  const router = new Router();
 
-  console.log(`Web Console: http://localhost:${port}/`);
+  //handle HTTP issues without crashing
+  app.use(async (context, next) => {
+    try {
+      await next();
+    } catch (err) {
+      console.log(err);
+    }
+  });
 
-  for await (const conn of server) {
-    handleHttp(conn).catch(console.error);
-  }
+  //handle /ui web console
+  app.use(async (ctx, next) => {
+    let fpath = ctx.request.url.pathname;
+
+    if (fpath.startsWith("/ui")) {
+      fpath = fpath.substring("/ui".length);
+
+      if (
+        fpath === "" ||
+        fpath === "/" ||
+        fpath === "/index"
+      ) {
+        fpath = "/index.html";
+      }
+
+      await ctx.send({
+        path: fpath,
+        root: "/hscale/dist",
+      }).catch((reason) => {
+        console.warn("Couldn't send", fpath, reason);
+      });
+    } else {
+      await next();
+    }
+  });
+
+  router.get("/api/:action/:target", (ctx) => {
+    const { action, target } = ctx.params;
+    const res = {
+      status: "success",
+      action,
+      target,
+      result: {
+        target,
+        status: "" as any,
+      },
+    };
+
+    // console.log(action, target);
+    switch (action) {
+      case "toggle":
+        switch (target) {
+          case "pb":
+            pb_toggle();
+            res.result.status = pb_proc ? "online" : "offline";
+            break;
+          case "marmot":
+            if (!marmot_proc) {
+              marmot_proc = true as any;
+            } else {
+              marmot_proc = undefined as any;
+            }
+            res.result.status = marmot_proc ? "online" : "offline";
+            break;
+          default:
+            console.warn("Unhandled target", target, "ignoring");
+            res.status = "failed";
+            break;
+        }
+
+        break;
+      case "status":
+        switch (target) {
+          case "pb":
+            res.result.status = pb_proc ? "online" : "offline";
+            break;
+          case "marmot":
+            res.result.status = marmot_proc ? "online" : "offline";
+            break;
+          case "all":
+            res.result.status = {
+              marmot: marmot_proc ? "online" : "offline",
+              pb: pb_proc ? "online" : "offline",
+            }
+            break;
+          default:
+            console.warn("Unhandled target", target, "ignoring");
+            res.status = "failed";
+            break;
+        }
+        break;
+      default:
+        console.warn("Unhandle action", action, "ignoring");
+        res.status = "failed";
+        break;
+    }
+    ctx.response.body = res;
+  });
+
+  app.use(router.routes());
+  app.use(router.allowedMethods());
+
+  app.listen({ port });
+
+  log(`Web Console: http://localhost:${port}/`);
 }
 
 main();

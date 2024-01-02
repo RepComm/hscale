@@ -9,7 +9,7 @@ export function App() {
 		<LocationProvider>
 			<Router>
 				{/**@ts-expect-error*/}
-				<Route path="/" component={Home} />
+				<Route path="/ui" component={Home} />
 				<Route default component={NotFound} />
 			</Router>
 		</LocationProvider>

@@ -6,7 +6,8 @@ interface Props {
 
 }
 interface State {
-
+  pbOnline: boolean;
+  marmotOnline: boolean;
 }
 
 interface Pod {
@@ -17,7 +18,16 @@ interface Pod {
 }
 
 export class Home extends Component<Props, State> {
-	renderPod(pod: Pod) {
+	async componentDidMount() {
+    const raw = await fetch("/api/status/all");
+    const res = await raw.json();
+
+    this.setState({
+      pbOnline: res.result.status.pb === "online",
+      marmotOnline: res.result.status.marmot === "online",
+    });
+  }
+  renderPod(pod: Pod) {
 		return <div class="pod border">
 			<div class="kv">
 				<span class="k">Label : </span><span class="v">{pod.label}</span>
@@ -82,14 +92,35 @@ export class Home extends Component<Props, State> {
 				<div class="pocketbase border">
 					<div class="row">
 						<h2 title="a database in one executable">pocketbase</h2>
-						<button class="btn" title="opens pocketbase web console">manage</button>
+						<button
+              class="btn"
+              title="opens pocketbase web console"
+              onClick={()=>{
+                const proto = window.location.protocol;
+                const hostname = window.location.hostname;
+                window.open(`${proto}//${hostname}:8090/_`);
+              }}
+              disabled={!this.state.pbOnline}
+              >manage</button>
 						<div class="col">
 							<div
 								class="btn power align-flex-end"
 								title="Toggle container online"
+                onClick={async()=>{
+                  const raw = await fetch("/api/toggle/pb");
+                  const res = await raw.json();
+
+                  if (res.status === "success") {
+                    this.setState({
+                      pbOnline: res.result.status === "online"
+                    });
+                  } else {
+                    console.warn("Failed to toggle pb");
+                  }
+                }}
 							>
-								<span>Power On</span>
-								<div class="on" />
+								<span>{ this.state.pbOnline ? "Power Off" : "Power On"}</span>
+								<div class={this.state.pbOnline ? "on" : "off"} />
 							</div>
 						</div>
 					</div>
@@ -101,9 +132,21 @@ export class Home extends Component<Props, State> {
 							<div
 								class="btn power align-flex-end"
 								title="Toggle container online"
+                onClick={async()=>{
+                  const raw = await fetch("/api/toggle/marmot");
+                  const res = await raw.json();
+
+                  if (res.status === "success") {
+                    this.setState({
+                      marmotOnline: res.result.status === "online"
+                    });
+                  } else {
+                    console.warn("Failed to toggle marmot");
+                  }
+                }}
 							>
-								<span>Power On</span>
-								<div class="on" />
+								<span>{ this.state.marmotOnline ? "Power Off" : "Power On"}</span>
+								<div class={this.state.marmotOnline ? "on" : "off"} />
 							</div>
 						</div>
 					</div>

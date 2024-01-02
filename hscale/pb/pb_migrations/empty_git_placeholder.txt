@@ -1,0 +1,1 @@
+an empty directory will not be tracked by git, but will crash podman copy scripts

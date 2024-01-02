@@ -1,6 +1,0 @@
-FROM localhost/hscale/base:latest
-USER root
-
-RUN apt-get install -y unzip ca-certificates
-COPY ./pb /pb
-COPY /pb/pb_data /persist/pocketbase/pb_data

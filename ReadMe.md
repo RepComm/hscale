@@ -7,13 +7,19 @@ A pocketbase + marmot management console
 ![img](./example.png)
 
 ## state - NOT READY
-- web UI - partially implemented
-- containers - partially implemented
-- deno hscale app/container
-  - stream /webconsole/dist over port 10209
+- webconsole
+  - can power on/off pocketbase
+- API
+  - /api/status/(all|pb|marmot)
+  - /api/toggle/(pb|marmot)
+- containers
+  - base - ubuntu latest + apt-get update
+  - hscale - uses base
+    - deno webconsole http server/api on port 10209
+    - pocketbase on port 8090
+    - marmot on port 4221
 ## TODO
-- deno hscale app rest API endpoint
-- starting and stopping marmot and pocketbase
+- start/stop marmot
 - discovery/linking of cluster
 
 ## legend
@@ -27,12 +33,62 @@ A pocketbase + marmot management console
 replication - a way to synchronize database copies for backup and/or load distribution purposes
 
 ## purpose
-I wanted to get into scaling pocketbase horizontally for production use, and found marmot to suit my needs.
+Using marmot can be tedious. You have to tell each node about the others.
 
-However the concept of having to manipulate each node in a cluster to add just one additional node seemed like extra work.
+This container hosts pocketbase, marmot, and hscale deno http webconsole/api.
 
-This project aims to make the process as easy as a few button clicks, and typing a host:port once per node in the cluster.
+marmot and pocketbase do the jobs they already do.
+
+hscale webconsole, api, and discovery automates the process of linking marmot nodes.
 
 Adding a node to the local hscale node will trigger the other nodes to add it back.
 
+## Usage
 
+### install
+- clone the repo to a node that will join your cluster
+
+`git clone https://github.com/RepComm/hscale`
+
+- navigate to cloned repo
+
+`cd ./hscale`
+
+- build base image
+
+`cd ./base`
+
+`./build.sh`
+
+- build hscale image
+
+`cd ../hscale`
+
+`./build.sh`
+
+### run
+- start podman container
+
+`./start.sh`
+> [hscale][log] Web Console: http://localhost:10209/
+
+### configure
+open the URL provided in a browser
+
+#### first-node
+if this is your first node:
+- set Mode to "Seed"
+- Click Pocketbase "Power On" button
+- click "Manage" to open pocketbase web UI
+  - create your collections as usual for pocketbase
+- Click Marmot "Power On" button
+
+#### additional-nodes
+if this is an additional node:
+- set Mode to "Bootstrap"
+- Click Pocketbase "Power On" button
+- Click Marmot "Power On" button
+- Add the host:port of a node that has "Seed" mode set in Cluster section
+  - Node will begin copying from online Seed nodes
+  - Local node and Seed node will auto set to "Replicate" mode when complete
+  - No further action on any node is normally required

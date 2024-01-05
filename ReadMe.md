@@ -71,12 +71,18 @@ Adding a node to the local hscale node will trigger the other nodes to add it ba
 - start podman container
 
 `./start.sh`
-> [hscale][log] Web Console: http://localhost:10209/
+> [hscale][log] Web Console: http://localhost:10209/ui
 
 Start will auto-create the persistence volume based on the container name
 
 You can run custom args for ./start.sh:
-`./start.sh [CONTAINER_NAME | "hscale"] [POCKET_PORT | 8090] [MARMOT_PORT | 8091] [HSCALE_PORT | 8092]`
+`./start.sh [CONTAINER_NAME | "hscale"] [POCKET_PORT | 8090] [MARMOT_PORT | 8091] [HSCALE_PORT | 8092] [DETACH | -d]`
+
+ex: `./start primary`
+> [hscale][log] Web Console: http://localhost:10209/ui
+
+ex: `./start secondary 8093 8094 8095 -d`
+> [INFO] Will run in detached mode - webconsole will be available at http://localhost:8082/ui
 
 The container name is prefixed with `hscale-`
 

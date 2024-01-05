@@ -2,3 +2,4 @@ FROM ubuntu:latest
 USER root
 
 RUN apt-get update
+RUN apt-get install -y sqlite3

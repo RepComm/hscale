@@ -2,71 +2,86 @@
 import { Component } from 'preact';
 import "./style.css";
 import { useRef } from 'preact/hooks';
+import { Peer, ReqStateSet, SSEJson, SSEMap, State, req } from './api';
 
 interface Props {
 
 }
-interface State {
-  pbOnline: boolean;
-  marmotOnline: boolean;
+interface HomeState extends State {
 }
 
-interface Pod {
-  label: string;
-  id: string;
-  hostname: string;
-  status: string;
-}
+// interface Pod {
+//   label: string;
+//   id: string;
+//   hostname: string;
+//   status: string;
+// }
 
-export class Home extends Component<Props, State> {
+export class Home extends Component<Props, HomeState> {
+  sseSrc: EventSource;
+
   async componentDidMount() {
-    const raw = await fetch("/api/status/all");
-    const res = await raw.json();
+    const res = await req("state_get");
+    this.setState(res.state);
 
-    this.setState({
-      pbOnline: res.result.status.pb === "online",
-      marmotOnline: res.result.status.marmot === "online",
+    this.sseSrc = new EventSource("/sse");
+    this.sseSrc.addEventListener("message", (m)=>{
+      console.log("SSE", m);
+      let msg = undefined as SSEJson<keyof SSEMap>;
+
+      try {
+        msg = JSON.parse(m.data);
+      } catch (ex) {
+        console.warn("Invalid json from SSE", ex);
+      }
+      
+      switch (msg.type) {
+        case "state": {
+          this.setState(msg.msg);
+        } break;
+        default:
+          break;
+      }
     });
+    
   }
-  renderPod(pod: Pod) {
+  componentWillUnmount(): void {
+    this.sseSrc.close();
+    this.sseSrc = undefined;
+  }
+  renderPeer(p: Peer) {
     return <div class="pod border">
-      <div class="kv">
-        <span class="k">Label : </span><span class="v">{pod.label}</span>
-      </div>
+      {/* <div class="kv">
+        <span class="k">Label : </span><span class="v">{p.hostname}</span>
+      </div> */}
+
+      {/* <div class="kv">
+        <span class="k">ID : </span> <span class="v">{p.}</span>
+      </div> */}
 
       <div class="kv">
-        <span class="k">ID : </span> <span class="v">{pod.id}</span>
+        <span class="k">Hostname : </span><span class="v">{p.hostname}</span>
       </div>
 
-      <div class="kv">
-        <span class="k">Hostname : </span><span class="v">{pod.hostname}</span>
-      </div>
-
-      <div class="kv">
-        <span class="k">Status : </span><span class="v">{pod.status}</span>
-      </div>
+      {/* <div class="kv">
+        <span class="k">Status : </span><span class="v">{p.status}</span>
+      </div> */}
     </div>
   }
-  renderPods(pods: Pod[]) {
+  renderPeers(peers: Peer[]) {
     const results = [];
 
-    for (const pod of pods) {
-      results.push(this.renderPod(pod));
+    if (!peers) return results;
+    for (const pod of peers) {
+      results.push(this.renderPeer(pod));
     }
 
     return results;
   }
   render() {
-    const pods = [
-      {
-        label: "Demo Pod",
-        hostname: "localhost",
-        id: "abcdefghijklmnopqrstuvwxyz",
-        status: "online"
-      }
-    ];
 
     const hostRef = useRef<HTMLInputElement>();
+    const seedRef = useRef<HTMLInputElement>();
 
     return <div class="home border">
       <h1 class="text-center header">hscale - webconsole</h1>
@@ -86,8 +101,19 @@ export class Home extends Component<Props, State> {
           >Replicating</h3>
         </div>
         <div class="row indent">
-          <h3 for="b-replicate">Seed</h3>
-          <input id="b-replicate" type="checkbox"></input>
+          <h3 for="b-seed">Seed</h3>
+          <input
+            ref={seedRef}
+            id="b-seed"
+            type="checkbox"
+            onChange={() => {
+              req("state_set", {
+                isSeedAllowed: seedRef.current.checked
+              }).catch((reason) => {
+                seedRef.current.checked = !seedRef.current.checked;
+              });
+            }}
+          ></input>
 
           <h3 class="indent" title="Replication status">Status :</h3>
           <h3
@@ -101,9 +127,8 @@ export class Home extends Component<Props, State> {
             <button
               class="btn"
               id="bootstrap"
-              onClick={()=>{
+              onClick={async () => {
                 const KEY = "HSCALE";
-
                 if (
                   confirm(
                     "DANGER: Bootstrap will rebuild local db from a Seed enabled node in the existing cluster. If a seed is not found then no data will change. Please confirm:"
@@ -111,12 +136,16 @@ export class Home extends Component<Props, State> {
                     `Please enter: ${KEY} to confirm data loss is allowed:`, ""
                   ) === KEY
                 ) {
-                  fetch("/api/bootstrap");
+                  req("state_set", {
+                    isBootstrapAllowed: true
+                  }).catch((reason)=>{
+                    alert("Issue: " + reason);
+                  });
                 } else {
                   alert("Bootstrap action is cancelled due to user input.");
                 }
               }}
-              >Bootstrap</button>
+            >Bootstrap</button>
           </div>
           <h3 class="indent" title="Replication status">Status :</h3>
           <h3
@@ -139,31 +168,20 @@ export class Home extends Component<Props, State> {
               class="btn"
               title="opens pocketbase web console"
               onClick={() => {
-                const proto = window.location.protocol;
-                const hostname = window.location.hostname;
                 window.open("/pb");
               }}
-              disabled={!this.state.pbOnline}
+              disabled={!this.state.pb}
             >manage</button>
             <div class="col">
               <div
                 class="btn power align-flex-end"
                 title="Toggle container online"
                 onClick={async () => {
-                  const raw = await fetch("/api/toggle/pb");
-                  const res = await raw.json();
-
-                  if (res.status === "success") {
-                    this.setState({
-                      pbOnline: res.result.status === "online"
-                    });
-                  } else {
-                    console.warn("Failed to toggle pb");
-                  }
+                  req("state_set", { pb: !this.state.pb });
                 }}
               >
-                <span>{this.state.pbOnline ? "Power Off" : "Power On"}</span>
-                <div class={this.state.pbOnline ? "on" : "off"} />
+                <span>{this.state.pb ? "Power Off" : "Power On"}</span>
+                <div class={this.state.pb ? "on" : "off"} />
               </div>
             </div>
           </div>
@@ -176,20 +194,13 @@ export class Home extends Component<Props, State> {
                 class="btn power align-flex-end"
                 title="Toggle container online"
                 onClick={async () => {
-                  const raw = await fetch("/api/toggle/marmot");
-                  const res = await raw.json();
-
-                  if (res.status === "success") {
-                    this.setState({
-                      marmotOnline: res.result.status === "online"
-                    });
-                  } else {
-                    console.warn("Failed to toggle marmot");
-                  }
+                  req("state_set", {
+                    marmot: !this.state.marmot
+                  });
                 }}
               >
-                <span>{this.state.marmotOnline ? "Power Off" : "Power On"}</span>
-                <div class={this.state.marmotOnline ? "on" : "off"} />
+                <span>{this.state.marmot ? "Power Off" : "Power On"}</span>
+                <div class={this.state.marmot ? "on" : "off"} />
               </div>
             </div>
           </div>
@@ -221,13 +232,12 @@ export class Home extends Component<Props, State> {
         <div class="pod border">
           <div class="row">
             <div class="add"
-              onClick={async () => {
-                const raw = await fetch(`/api/add/${hostRef.current.value}`);
-                const res = await raw.json();
-
-                if (res.status === "success") {
-
+              onClick={() => {
+                let host = hostRef.current.value;
+                if (!host.startsWith("http://")) {
+                  host = `http://${host}`;
                 }
+                req("peer_add", { host });
               }}
             />
             <label for="host-input">Host : </label>
@@ -235,11 +245,11 @@ export class Home extends Component<Props, State> {
               <input
                 ref={hostRef}
                 class="align-flex-end"
-                id="host-input" value="localhost:4221" />
+                id="host-input" value="http://localhost:8095" />
             </div>
           </div>
         </div>
-        {this.renderPods(pods)}
+        {this.renderPeers(this.state.peers)}
       </div>
     </div>
   }

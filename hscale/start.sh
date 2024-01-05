@@ -97,7 +97,7 @@ $DETACH \
 -p $MARMOT_PORT:$MARMOT_PORT \
 -p $HSCALE_PORT:$HSCALE_PORT \
  hscale/$IMAGE_NAME \
-deno run --allow-net --allow-read --allow-run --allow-env /hscale/main.ts
+deno run --allow-net --allow-read --allow-write --allow-run --allow-env /hscale/main.ts
 
 
 # --net podman1 \

@@ -6,11 +6,13 @@ COPY --from=deno /deno /usr/local/bin/deno
 
 USER root
 
+COPY ./marmot /marmot
 COPY ./pb /pb
 COPY /pb/pb_data /persist/pocketbase/pb_data
 
 ENV DENO_DIR /persist/deno
 
 COPY ./main.ts /hscale/main.ts
+COPY ./webconsole/src/pages/api.ts /hscale/webconsole/src/pages/api.ts
 # RUN deno cache /hscale/main.ts
 COPY ./webconsole/dist /hscale/dist

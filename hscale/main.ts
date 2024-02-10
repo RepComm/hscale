@@ -185,6 +185,8 @@ function marmot_on () {
       `-cluster-peers '${peersToNatsUrls(state.peers)}'`,
       `-config ${marmot_config}`,
     ],
+    stdout: "piped",
+    stderr: "piped",
   });
 
   marmot_proc = cmd.spawn();

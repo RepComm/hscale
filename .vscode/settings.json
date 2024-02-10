@@ -28,5 +28,6 @@
   },
   "deno.enable": true,
   "deno.lint": false,
-  "deno.unstable": true
+  "deno.unstable": true,
+  "deno.path": "/home/jcrowder/.deno/bin/deno"
 }

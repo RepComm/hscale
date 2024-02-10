@@ -9,10 +9,9 @@ A pocketbase + marmot management console
 
 ## state - NOT READY
 - webconsole
-  - can power on/off pocketbase
+  - state sync with deno server
 - API
-  - /api/status/(all|pb|marmot)
-  - /api/toggle/(pb|marmot)
+  - /api endpoint + standard req() method for deno/web
 - containers
   - base - ubuntu latest + apt-get update
   - hscale - uses base
